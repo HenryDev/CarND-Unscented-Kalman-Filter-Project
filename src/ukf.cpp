@@ -60,7 +60,7 @@ UKF::~UKF() {}
  * either radar or laser.
  */
 void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
-    long previous_timestamp;
+    long previous_timestamp = 0;
     if (!is_initialized_) {
         x_ << 1, 1, 1, 1, 1;
         if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
@@ -101,6 +101,7 @@ void UKF::Prediction(double delta_t) {
     Complete this function! Estimate the object's location. Modify the state
     vector, x_. Predict sigma points, the state, and the state covariance matrix.
     */
+    VectorXd augmented_mean_state = VectorXd(7);
 }
 
 /**
