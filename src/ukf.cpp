@@ -43,14 +43,6 @@ UKF::UKF() {
 
     // Radar measurement noise standard deviation radius change in m/s
     std_radrd_ = 0.3;
-
-    /**
-    TODO:
-
-    Complete the initialization. See ukf.h for other member properties.
-
-    Hint: one or more values initialized above might be wildly off...
-    */
 }
 
 UKF::~UKF() {}
@@ -96,12 +88,42 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
  */
 void UKF::Prediction(double delta_t) {
     /**
-    TODO:
-
-    Complete this function! Estimate the object's location. Modify the state
+    Estimate the object's location. Modify the state
     vector, x_. Predict sigma points, the state, and the state covariance matrix.
     */
     VectorXd augmented_mean_state = VectorXd(7);
+    int state_dimension = 5;
+    x_ << 5.7441,
+            1.3800,
+            2.2049,
+            0.5015,
+            0.3528;
+    augmented_mean_state.head(5) = x_;
+    augmented_mean_state(5) = 0;
+    augmented_mean_state(6) = 0;
+
+    MatrixXd augmented_state_covariance = MatrixXd(7, 7);
+    augmented_state_covariance.fill(0, 0);
+    P_ << 0.0043, -0.0013, 0.0030, -0.0022, -0.0020,
+            -0.0013, 0.0077, 0.0011, 0.0071, 0.0060,
+            0.0030, 0.0011, 0.0054, 0.0007, 0.0008,
+            -0.0022, 0.0071, 0.0007, 0.0098, 0.0100,
+            -0.0020, 0.0060, 0.0008, 0.0100, 0.0123;
+    augmented_state_covariance.topLeftCorner(5, 5) = P_;
+    augmented_state_covariance(5, 5) = std_a_ * std_a_;
+    augmented_state_covariance(6, 6) = std_yawdd_ * std_yawdd_;
+
+    MatrixXd square_root_matrix = augmented_state_covariance.llt().matrixL();
+
+    int augmented_dimension = 7;
+    MatrixXd sigma_points = MatrixXd(augmented_dimension, 2 * augmented_dimension + 1);
+    sigma_points.col(0) = augmented_mean_state;
+    for (int i = 0; i < augmented_dimension; i++) {
+        int lambda = 3 - augmented_dimension;
+        sigma_points.col(i + 1) = augmented_mean_state + sqrt(lambda + augmented_dimension) * square_root_matrix.col(i);
+        sigma_points.col(i + 1 + augmented_dimension) =
+                augmented_mean_state - sqrt(lambda + augmented_dimension) * square_root_matrix.col(i);
+    }
 }
 
 /**
