@@ -115,14 +115,78 @@ void UKF::Prediction(double delta_t) {
 
     MatrixXd square_root_matrix = augmented_state_covariance.llt().matrixL();
 
+    //create augmented sigma points
     int augmented_dimension = 7;
     MatrixXd sigma_points = MatrixXd(augmented_dimension, 2 * augmented_dimension + 1);
     sigma_points.col(0) = augmented_mean_state;
+    int lambda = 3 - augmented_dimension;
     for (int i = 0; i < augmented_dimension; i++) {
-        int lambda = 3 - augmented_dimension;
         sigma_points.col(i + 1) = augmented_mean_state + sqrt(lambda + augmented_dimension) * square_root_matrix.col(i);
         sigma_points.col(i + 1 + augmented_dimension) =
                 augmented_mean_state - sqrt(lambda + augmented_dimension) * square_root_matrix.col(i);
+    }
+
+    //predict sigma points
+    MatrixXd predicted_sigma_points = MatrixXd(augmented_dimension, 2 * augmented_dimension + 1);
+    for (int i = 0; i < 2 * augmented_dimension + 1; i++) {
+        double p_x = sigma_points(0, i);
+        double p_y = sigma_points(1, i);
+        double v = sigma_points(2, i);
+        double yaw = sigma_points(3, i);
+        double yaw_dot = sigma_points(4, i);
+        double nu_a = sigma_points(5, i);
+        double nu_dot = sigma_points(6, i);
+
+        double px_p, py_p;
+
+        if (fabs(yaw_dot) > 0.001) {
+            px_p = p_x + v / yaw_dot * (sin(yaw + yaw_dot * delta_t) - sin(yaw));
+            py_p = p_y + v / yaw_dot * (cos(yaw) - cos(yaw + yaw_dot * delta_t));
+        } else {
+            px_p = p_x + v * delta_t * cos(yaw);
+            py_p = p_y + v * delta_t * sin(yaw);
+        }
+
+        double v_p = v;
+        double yaw_p = yaw + yaw_dot * delta_t;
+        double yawd_p = yaw_dot;
+
+        //add noise
+        px_p += 0.5 * nu_a * delta_t * delta_t * cos(yaw);
+        py_p += 0.5 * nu_a * delta_t * delta_t * sin(yaw);
+        v_p += nu_a * delta_t;
+        yaw_p += 0.5 * nu_dot * delta_t * delta_t;
+        yawd_p += nu_dot * delta_t;
+
+
+        predicted_sigma_points(0, i) = px_p;
+        predicted_sigma_points(1, i) = py_p;
+        predicted_sigma_points(2, i) = v_p;
+        predicted_sigma_points(3, i) = yaw_p;
+        predicted_sigma_points(4, i) = yawd_p;
+    }
+
+    // set weights
+    VectorXd weights = VectorXd(2 * augmented_dimension + 1);
+    weights(0) = lambda / (lambda + augmented_dimension);
+    for (int i = 1; i < 2 * augmented_dimension + 1; i++) {  //2n+1 weights
+        weights(i) = 0.5 / (augmented_dimension + lambda);
+    }
+
+    //predicted state mean
+    x_.fill(0.0);
+    for (int i = 0; i < 2 * augmented_dimension + 1; i++) {  //iterate over sigma points
+        x_ += weights(i) * predicted_sigma_points.col(i);
+    }
+
+    //predicted state covariance matrix
+    P_.fill(0.0);
+    for (int i = 0; i < 2 * augmented_dimension + 1; i++) {  //iterate over sigma points
+        VectorXd state_difference = predicted_sigma_points.col(i) - x_;
+        //angle normalization
+        while (state_difference(3) > M_PI) state_difference(3) -= 2. * M_PI;
+        while (state_difference(3) < -M_PI) state_difference(3) += 2. * M_PI;
+        P_ += weights(i) * state_difference * state_difference.transpose();
     }
 }
 
