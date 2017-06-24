@@ -223,15 +223,15 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
     /**
     Use lidar data to update the belief about the object's position. Modify the state vector, x_, and covariance, P_.
     */
-    VectorXd y = z - H_ * x_;
-
-    MatrixXd Ht = H_.transpose();
-    MatrixXd S = H_ * P_ * Ht + R_;
-    MatrixXd K = P_ * Ht * S.inverse();
-
-    x_ = x_ + (K * y);
-    MatrixXd I = MatrixXd::Identity(x_.size(), x_.size());
-    P_ = (I - K * H_) * P_;
+//    VectorXd y = z - H_ * x_;
+//
+//    MatrixXd Ht = H_.transpose();
+//    MatrixXd S = H_ * P_ * Ht + R_;
+//    MatrixXd K = P_ * Ht * S.inverse();
+//
+//    x_ = x_ + (K * y);
+//    MatrixXd I = MatrixXd::Identity(x_.size(), x_.size());
+//    P_ = (I - K * H_) * P_;
 }
 
 /**
@@ -276,9 +276,6 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
         Zsig(1, i) = atan2(p_y, p_x);                                 //phi
         Zsig(2, i) = (p_x * v1 + p_y * v2) / sqrt(p_x * p_x + p_y * p_y);   //r_dot
     }
-
-    //set measurement dimension, radar can measure r, phi, and r_dot
-    int n_z = 3;
 
     //define spreading parameter
     double lambda = 3 - n_aug;
