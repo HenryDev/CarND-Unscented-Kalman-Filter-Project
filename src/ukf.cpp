@@ -223,15 +223,25 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
     /**
     Use lidar data to update the belief about the object's position. Modify the state vector, x_, and covariance, P_.
     */
-//    VectorXd y = z - H_ * x_;
-//
-//    MatrixXd Ht = H_.transpose();
-//    MatrixXd S = H_ * P_ * Ht + R_;
-//    MatrixXd K = P_ * Ht * S.inverse();
-//
-//    x_ = x_ + (K * y);
-//    MatrixXd I = MatrixXd::Identity(x_.size(), x_.size());
-//    P_ = (I - K * H_) * P_;
+    //measurement matrix
+    MatrixXd H_ = MatrixXd(2, 5);
+    H_ << 1, 0, 0, 0, 0,
+            0, 1, 0, 0, 0;
+
+    VectorXd y = meas_package.raw_measurements_ - H_ * x_;
+
+    //measurement covariance
+    MatrixXd R_ = MatrixXd(2, 2);
+    R_ << 0.0225, 0,
+            0, 0.0225;
+
+    MatrixXd Ht = H_.transpose();
+    MatrixXd S = H_ * P_ * Ht + R_;
+    MatrixXd K = P_ * Ht * S.inverse();
+
+    x_ = x_ + (K * y);
+    MatrixXd I = MatrixXd::Identity(x_.size(), x_.size());
+    P_ = (I - K * H_) * P_;
 }
 
 /**
