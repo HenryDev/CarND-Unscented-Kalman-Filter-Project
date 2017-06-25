@@ -24,10 +24,10 @@ UKF::UKF() {
     P_ = MatrixXd(5, 5);
 
     // Process noise standard deviation longitudinal acceleration in m/s^2
-    std_a_ = M_PI;
+    std_a_ = 1;
 
     // Process noise standard deviation yaw acceleration in rad/s^2
-    std_yawdd_ = M_PI;
+    std_yawdd_ = 0.5;
 
     // Laser measurement noise standard deviation position1 in m
     std_laspx_ = 0.15;
@@ -59,6 +59,13 @@ UKF::~UKF() {}
 void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     if (!is_initialized_) {
         x_ << 1, 1, 1, 1, 1;
+        P_.fill(0.0);
+        P_(0, 0) = 1;
+        P_(1, 1) = 1;
+        P_(2, 2) = 1;
+        P_(3, 3) = 1;
+        P_(4, 4) = 1;
+
         if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
             const double &rho = meas_package.raw_measurements_[0];
             const double &phi = meas_package.raw_measurements_[1];
@@ -95,7 +102,6 @@ void UKF::Prediction(double delta_t) {
     Estimate the object's location. Modify the state
     vector, x_. Predict sigma points, the state, and the state covariance matrix.
     */
-
 //    AugmentedSigmaPoints
     //create augmented mean vector
     VectorXd x_aug = VectorXd(n_aug_);
