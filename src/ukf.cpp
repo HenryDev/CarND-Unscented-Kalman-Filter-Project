@@ -265,13 +265,6 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
         Zsig(2, i) = (p_x * v1 + p_y * v2) / sqrt(p_x * p_x + p_y * p_y);   //r_dot
     }
 
-    double weight_0 = lambda_ / (lambda_ + n_aug_);
-    weights_(0) = weight_0;
-    for (int i = 1; i < 2 * n_aug_ + 1; i++) {
-        double weight = 0.5 / (n_aug_ + lambda_);
-        weights_(i) = weight;
-    }
-
     //mean predicted measurement
     VectorXd z_pred = VectorXd(n_z);
     z_pred.fill(0.0);
